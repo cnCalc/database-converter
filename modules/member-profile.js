@@ -4,7 +4,7 @@ function convertMemberProfile(config, conns) {
   if (!config.memberProfile.convert) {
     return Promise.resolve();
   }
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
 
     function fetchMemberData() {
       console.log('[MemberProfile][MySQL] Fetching profiles.');
@@ -13,7 +13,7 @@ function convertMemberProfile(config, conns) {
           sql: 'SELECT * FROM cbs_common_member_profile' + (config.memberProfile.skipFourZero ? ' WHERE NOT (gender = 0 AND birthyear = 0 AND birthmonth = 0 AND birthday = 0)' : ''),
         }, (err, res) => {
           if (err) reject(err);
-          else     resolve(res);
+          else resolve(res);
         });
       })
     }
@@ -79,17 +79,16 @@ function convertMemberProfile(config, conns) {
       });
     }
 
-    cleanupMongo().then(() => {
-      return Promise.all([fetchMemberData(), fetchArchviedMemberData()])
-    }).then(values => {
-      return removeEmptyFileds(values.reduce((a, b) => a.concat(b)));
-    }).then(value => {
-      return insertMongo(value);
-    }).then(() => {
+    try {
+      await cleanupMongo();
+      let resSet = (await fetchMemberData()).concat(await fetchArchviedMemberData());
+      resSet = await removeEmptyFileds(resSet);
+      await insertMongo(resSet);
       resolve();
-    }).catch(err => {
+    } catch (err) {
       console.log(err);
-    })
+      reject(err);
+    }
   });
 }
 
