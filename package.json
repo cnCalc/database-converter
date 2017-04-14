@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "mongodb": "^2.2.25",
+    "mysql": "^2.13.0"
+  }
+}
