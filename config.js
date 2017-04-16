@@ -11,7 +11,12 @@ module.exports = {
   memberProfile: {
     convert: true,          // ..
     cleanup: true,          // Delete all data in MongoDB.
-    skipFourZero: true,     // Skip all users with empty brith{day|month|year} and gender.
+    skipFourZero: false,    // Skip all users with empty brith{day|month|year} and gender.
     skipArchiveTable: false // Skip archived user.
+  },
+  threadAndPost: {
+    convert: true,
+    cleanup: true,
+    convertPost: false      // TODO.
   }
 }

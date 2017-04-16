@@ -13,7 +13,7 @@ function convertMemberProfile(config, conns) {
           sql:
             'SELECT * FROM cbs_common_member_profile ' + 
             'INNER JOIN cbs_ucenter_members ON ' +
-            'cbs_common_member_profile.uid = cbs_ucenter_members.uid' + (config.memberProfile.skipFourZero ? ' WHERE NOT (gender = 0 AND birthyear = 0 AND birthmonth = 0 AND birthday = 0)' : ''),
+            'cbs_common_member_profile.uid = cbs_ucenter_members.uid' + (config.memberProfile.skipFourZero ? ' WHERE NOT (gender = 0 AND birthyear = 0 AND birthmonth = 0 AND birthday = 0)' : '') + ' LIMIT 0,18446744073709551615',
         }, (err, res) => {
           if (err) reject(err);
           else resolve(res);
@@ -31,7 +31,7 @@ function convertMemberProfile(config, conns) {
           sql:
             'SELECT * FROM cbs_common_member_profile_archive ' + 
             'INNER JOIN cbs_ucenter_members ON ' +
-            'cbs_common_member_profile_archive.uid = cbs_ucenter_members.uid' + (config.memberProfile.skipFourZero ? ' WHERE NOT (gender = 0 AND birthyear = 0 AND birthmonth = 0 AND birthday = 0)' : ''),
+            'cbs_common_member_profile_archive.uid = cbs_ucenter_members.uid' + (config.memberProfile.skipFourZero ? ' WHERE NOT (gender = 0 AND birthyear = 0 AND birthmonth = 0 AND birthday = 0)' : '') + ' LIMIT 0,18446744073709551615',
         }, (err, res) => {
           if (err)
             reject(err);
@@ -69,7 +69,7 @@ function convertMemberProfile(config, conns) {
       if (!config.memberProfile.cleanup) {
         return Promise.resolve();
       }
-      console.log('[MemberProfile][MongoDB] Deleting all data in common_member.');
+      console.log('[MemberProfile][Mongo] Deleting all data in common_member.');
       return new Promise((resolve, reject) => {
         conns.mongo.collection('common_member').deleteMany({}, (err, res) => {
           if (err) {
@@ -84,7 +84,7 @@ function convertMemberProfile(config, conns) {
 
     function insertMongo(data) {
       return new Promise((resolve, reject) => {
-        console.log('[MemberProfile][MongoDB] Inserting data into MongoDB...');
+        console.log('[MemberProfile][Mongo] Inserting data into MongoDB...');
         conns.mongo.collection('common_member').insertMany(data, (err, res) => {
           if (err) {
             reject(err);
@@ -100,6 +100,16 @@ function convertMemberProfile(config, conns) {
       await cleanupMongo();
       let resSet = (await fetchMemberData()).concat(await fetchArchviedMemberData());
       resSet = await removeEmptyFileds(resSet);
+      resSet = [
+        {
+          "uid" : 0,
+          "username": 'QQ 用户',
+          "credentials": {
+            type: "banned"
+          }
+        },
+        ...resSet
+      ]
       await insertMongo(resSet);
       resolve();
     } catch (err) {
