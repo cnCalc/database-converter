@@ -17,6 +17,6 @@ module.exports = {
   threadAndPost: {
     convert: true,
     cleanup: true,
-    convertPost: false      // TODO.
+    convertPost: true       // TODO.
   }
 }

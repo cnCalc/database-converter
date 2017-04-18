@@ -1,7 +1,5 @@
 'use strict';
 
-const ObjectID = require('mongodb')
-
 function convertThreadAndPost(config, conns) {
   if (!config.threadAndPost.convert) {
     return Promise.resolve();
@@ -12,7 +10,7 @@ function convertThreadAndPost(config, conns) {
         if (!config.threadAndPost.cleanup) {
           return Promise.resolve();
         }
-        console.log('[ThreadAndPost][Mongo] Deleting all data in common_member.');
+        console.log('[ThreadAndPost][Mongo] Deleting all data in discusson.');
         return new Promise((resolve, reject) => {
           conns.mongo.collection('discussion').deleteMany({}, (err, res) => {
             if (err) {
@@ -55,7 +53,7 @@ function convertThreadAndPost(config, conns) {
         console.log('[ThreadAndPost][MySQL] Fetching thread data.');
         return new Promise((resolve, reject) => {
           conns.mysql.query([
-            'SELECT authorid, subject, dateline, views, replies,',
+            'SELECT authorid, subject, dateline, views, replies, tid, ',
             '	      cbs_forum_forum.name as tag1, cbs_forum_threadclass.name as tag2',
             'FROM   cncalc.cbs_forum_thread',
             'inner join cbs_forum_forum ',
@@ -90,12 +88,56 @@ function convertThreadAndPost(config, conns) {
           obj.date = item.dateline;
           obj.views = item.views;
           obj.tags = [item.tag1, item.tag2];
-          obj.votes = [],
-          obj.state = null; // TODO
+          obj.tid = item.tid;
+          obj.status = null; // TODO
           transformed.push(obj);
         });
 
         return transformed;
+      }
+
+      function attachThreadPosts(dataset, uidMap) {
+        if (!config.threadAndPost.convertPost) {
+          return Promise.resolve(dataset);
+        }
+
+        return new Promise((resolve, reject) => {
+          console.log('[ThreadAndPost][MySQL] Fetching posts data (it may take some time).')
+          let promiseArray = new Array(dataset.length);
+          for (let i = 0; i != dataset.length; ++i) {
+            promiseArray[i] = new Promise((resolve, reject) => {
+              conns.mysql.query({
+                sql: 'SELECT * FROM cncalc.cbs_forum_post WHERE tid = ? ORDER BY pid',
+                values: [dataset[i].tid],
+              }, (err, data) => {
+                if (err) {
+                  reject(err);
+                } else {
+                  // Skip 每日签到贴
+                  dataset[i].posts = (dataset[i].tid === 10525) ? [] : data.map(post => {
+                    return {
+                      user: uidMap[post.authorid],
+                      createDate: post.dateline,
+                      encoding: 'discuz',
+                      content: post.message,
+                      allowScript: false,
+                      votes: [],
+                      status: null,
+                    };
+                  });
+                  delete dataset[i].tid;
+                  resolve();
+                }
+              })
+            });
+          }
+
+          Promise.all(promiseArray).then(() => {
+            resolve(dataset);
+          }).catch(e => {
+            reject(e);
+          })
+        })        
       }
 
       function insertMongo(data) {
@@ -113,9 +155,15 @@ function convertThreadAndPost(config, conns) {
       }
 
       try {
+        await cleanupMongo();
         let uidMap = await prepareUserData();
         let threadData = await fetchThreadData();
         let dataset = transformThreadData(threadData, uidMap);
+        dataset = await attachThreadPosts(dataset, uidMap);
+        /*while (dataset.length > 0) {
+          let partof = dataset.splice(0, 5000);
+          await insertMongo(partof);
+        }*/
         await insertMongo(dataset);
         resolve();
       } catch (e) {
