@@ -56,9 +56,9 @@ function convertThreadAndPost(config, conns) {
             'SELECT authorid, subject, dateline, views, replies, tid, ',
             '	      cbs_forum_forum.name as tag1, cbs_forum_threadclass.name as tag2',
             'FROM   cncalc.cbs_forum_thread',
-            'inner join cbs_forum_forum ',
+            'left join cbs_forum_forum ',
             '	  on cbs_forum_forum.fid = cbs_forum_thread.fid',
-            'inner join cbs_forum_threadclass ',
+            'left join cbs_forum_threadclass ',
             '	  on cbs_forum_threadclass.typeid = cbs_forum_thread.typeid',
           ].join(' '), (err, data) => {
             if (err) {
@@ -90,6 +90,7 @@ function convertThreadAndPost(config, conns) {
           obj.tags = [item.tag1, item.tag2];
           obj.tid = item.tid;
           obj.status = null; // TODO
+
           transformed.push(obj);
         });
 
