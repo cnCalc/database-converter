@@ -6,8 +6,25 @@ function convertAttachments(config, conns) {
   } else {
     return new Promise((resolve, reject) => {
 
+      function cleanupMongo() {
+        if (!config.threadAndPost.cleanup) {
+          return Promise.resolve();
+        }
+        console.log('[Attachments][Mongo] Deleting all data in attachment.');
+        return new Promise((resolve, reject) => {
+          conns.mongo.collection('attachment').deleteMany({}, (err, res) => {
+            if (err) {
+              reject(err);
+            }
+            else {
+              resolve();
+            }
+          })
+        })
+      }
+
       function fetchAttachments(tail) {
-        console.log(`[Attachments][Mongo] Fetching attachments from table: cbs_forum_attachment_${tail}.`);
+        console.log(`[Attachments][MySQL] Fetching attachments from table: cbs_forum_attachment_${tail}.`);
         return new Promise((resolve, reject) => {
           conns.mysql.query({
             sql:
@@ -36,33 +53,34 @@ function convertAttachments(config, conns) {
         });
       }
 
-
-      Promise.all([prepareUserData(), ...Array(10).fill(0).map((el, off) => off).concat('unused').map(fetchAttachments)])
-        .then(values => {
-          let uidMap = values.shift();
-          let attachments = values.reduce((a, b) => [...Array.from(a), ...Array.from(b)]).map(row => {
-            return {
-              uploader: uidMap[row.uid],
-              date: row.dateline,
-              filename: row.filename,
-              path: row.attachment,
-              downloadCount: row.downloads,
-            }
+      cleanupMongo().then(() => {
+        Promise.all([prepareUserData(), ...Array(10).fill(0).map((el, off) => off).concat('unused').map(fetchAttachments)])
+          .then(values => {
+            let uidMap = values.shift();
+            let attachments = values.reduce((a, b) => [...Array.from(a), ...Array.from(b)]).map(row => {
+              return {
+                uploader: uidMap[row.uid],
+                date: row.dateline,
+                filename: row.filename,
+                path: row.attachment,
+                downloadCount: row.downloads,
+              }
+            });
+            console.log('[Attachments][Mongo] Inserting data into MongoDB...');
+            conns.mongo.collection('attachment').insertMany(attachments, (err, res) => {
+              if (err) {
+                reject(err);
+              }
+              else {
+                resolve();
+              }
+            });
+          })
+          .catch(err => {
+            console.log(err)
+            reject(err);
           });
-          console.log('[Attachments][Mongo] Inserting data into MongoDB...');
-          conns.mongo.collection('attachment').insertMany(attachments, (err, res) => {
-            if (err) {
-              reject(err);
-            }
-            else {
-              resolve();
-            }
-          });
-        })
-        .catch(err => {
-          console.log(err)
-          reject(err);
-        });
+      });
 
     });
   }
