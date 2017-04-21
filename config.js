@@ -18,5 +18,9 @@ module.exports = {
     convert: true,
     cleanup: true,
     convertPost: true       // TODO.
+  },
+  attachment: {
+    convert: true,
+    cleanup: true,
   }
 }
