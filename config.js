@@ -17,9 +17,13 @@ module.exports = {
   threadAndPost: {
     convert: true,
     cleanup: true,
-    convertPost: true       // TODO.
+    convertPost: true
   },
   attachment: {
+    convert: true,
+    cleanup: true,
+  },
+  pmMessage: {
     convert: true,
     cleanup: true,
   }

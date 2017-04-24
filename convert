@@ -8,6 +8,7 @@ const config = require('./config');
 const convertMemberProfile = require('./modules/member-profile');
 const convertThreadAndPost = require('./modules/thread-and-post');
 const convertAttachment = require('./modules/attachments');
+const convertPmMessage = require('./modules/pm-message');
 
 function createConnection(config) {
   return new Promise((resolve, reject) => {
@@ -35,6 +36,8 @@ createConnection(config).then(_conns => {
   return convertThreadAndPost(config, conns);
 }).then(() => {
   return convertAttachment(config, conns);
+}).then(() => {
+  return convertPmMessage(config, conns);
 }).then(() => {
   console.log("Finished!");
   process.exit(0);
