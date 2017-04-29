@@ -1,8 +1,8 @@
 module.exports = {
   mysql: {
-    host: 'cncalc-ubuntu.lan',
+    host: '::1',
     user: 'root',
-    password: '123456',
+    password: '',
     database: 'cncalc'
   },
   mongo: {
