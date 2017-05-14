@@ -69,6 +69,15 @@ const tagsMap = {
   '其他': []
 }
 
+let categoriesMap = {
+  "其他图形编程计算器": "其他图形计算器",
+  "图形编程计算器资源下载": "图形计算器资源下载",
+  "卡西欧（CASIO）图形编程计算器": "卡西欧（CASIO）图形计算器",
+  "德州仪器（TI）图形编程计算器": "德州仪器（TI）图形计算器",
+  "惠普（HP）图形编程计算器": "惠普（HP）图形计算器",
+  "ArithMax开源图形计算器项目": "ArithMax开源计算器项目"
+}
+
 function convertThreadAndPost(config, conns) {
   if (!config.threadAndPost.convert) {
     return Promise.resolve();
@@ -123,7 +132,7 @@ function convertThreadAndPost(config, conns) {
         return new Promise((resolve, reject) => {
           conns.mysql.query([
             'SELECT authorid, subject, dateline, views, replies, tid, ',
-            '	      cbs_forum_forum.name as tag1, cbs_forum_threadclass.name as tag2',
+            '	      cbs_forum_forum.name as category',
             'FROM   cncalc.cbs_forum_thread',
             'left join cbs_forum_forum ',
             '	  on cbs_forum_forum.fid = cbs_forum_thread.fid',
@@ -153,16 +162,11 @@ function convertThreadAndPost(config, conns) {
             console.log('[WARN] Unknown author id: ' + item.authorid + '. Maybe a deleted spammer?');
             warned.push(item.authorid)
           }
-          if (!tagsMap[item.tag1]) {
-            console.log(item.tag1);
-          }
-          if (!tagsMap[item.tag2]) {
-            console.log(item.tag2);
-          }
           obj.title = item.subject;
           obj.lastDate = obj.createDate = item.dateline;
           obj.views = item.views;
-          obj.tags = [...new Set([...tagsMap[item.tag1], ...tagsMap[item.tag2]])];
+          obj.tags = [];
+          obj.category = categoriesMap[item.category] || item.category;
           obj.tid = item.tid;
           obj.status = null; // TODO
 
@@ -190,7 +194,11 @@ function convertThreadAndPost(config, conns) {
                   reject(err);
                 } else {
                   // Skip 每日签到贴
+                  dataset[i].participants = [];
                   dataset[i].posts = (dataset[i].tid === 10525) ? [] : data.map(post => {
+                    if (dataset[i].participants.indexOf(uidMap[post.authorid]) < 0) {
+                      dataset[i].participants.push(uidMap[post.authorid]);
+                    }
                     return {
                       user: uidMap[post.authorid],
                       createDate: post.dateline,
@@ -239,10 +247,6 @@ function convertThreadAndPost(config, conns) {
         let threadData = await fetchThreadData();
         let dataset = transformThreadData(threadData, uidMap);
         dataset = await attachThreadPosts(dataset, uidMap);
-        /*while (dataset.length > 0) {
-          let partof = dataset.splice(0, 5000);
-          await insertMongo(partof);
-        }*/
         await insertMongo(dataset);
         resolve();
       } catch (e) {
