@@ -164,6 +164,7 @@ function convertThreadAndPost(config, conns) {
           }
           obj.title = item.subject;
           obj.lastDate = obj.createDate = item.dateline;
+          obj.lastMember = null;
           obj.views = item.views;
           obj.tags = [];
           obj.category = categoriesMap[item.category] || item.category;
@@ -212,6 +213,7 @@ function convertThreadAndPost(config, conns) {
                   delete dataset[i].tid;
                   if (dataset[i].posts.length > 0) {
                     dataset[i].lastDate = dataset[i].posts[dataset[i].posts.length - 1].createDate;
+                    dataset[i].lastMember = dataset[i].posts[dataset[i].posts.length - 1].user;
                   }
                   resolve();
                 }
