@@ -69,7 +69,7 @@ const tagsMap = {
   '其他': []
 }
 
-let categoriesMap = {
+const categoriesMap = {
   "其他图形编程计算器": "其他图形计算器",
   "图形编程计算器资源下载": "图形计算器资源下载",
   "卡西欧（CASIO）图形编程计算器": "卡西欧（CASIO）图形计算器",
@@ -77,6 +77,8 @@ let categoriesMap = {
   "惠普（HP）图形编程计算器": "惠普（HP）图形计算器",
   "ArithMax开源图形计算器项目": "ArithMax开源计算器项目"
 }
+
+const contentConverter = require('./discussion-content');
 
 function convertThreadAndPost(config, conns) {
   if (!config.threadAndPost.convert) {
@@ -211,11 +213,14 @@ function convertThreadAndPost(config, conns) {
                       status: null,
                     };
                   });
-                  delete dataset[i].tid;
                   if (dataset[i].posts.length > 0) {
                     dataset[i].lastDate = dataset[i].posts[dataset[i].posts.length - 1].createDate;
                     dataset[i].lastMember = dataset[i].posts[dataset[i].posts.length - 1].user;
                     dataset[i].replies = dataset[i].posts.length;
+                    dataset[i].posts.forEach(post => {
+                      post.content = contentConverter(post.content);
+                      post.encoding = 'html';
+                    })
                   }
                   resolve();
                 }
