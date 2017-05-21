@@ -64,6 +64,7 @@ function convertAttachments(config, conns) {
                 filename: row.filename,
                 path: row.attachment,
                 downloadCount: row.downloads,
+                aid: row.aid,
               }
             });
             console.log('[Attachments][Mongo] Inserting data into MongoDB...');

@@ -39,6 +39,7 @@ function convertDiscussionContent(content) {
     .replace(/\[\/list\]/ig,                    (match)     => '</ul>')
     .replace(/\[indent\]/ig,                    (match)     => '<blockquote>')
     .replace(/\[\/indent\]/ig,                  (match)     => '</blockquote>')
+    .replace(/\[code\]([^]+?)\[\/code\]/ig,     (match, p1)  => '<pre class="code">' + p1.split('<').join('&lt;').split('>').join('&gt;') + '</pre>')
     .replace(/\[\/float\]/ig,                   (match)     => '')
     .replace(/\[(back|)color=([#\w]+?)\]/ig,    (match, p1) => ``)
     .replace(/\[size=(\d+?)\]/ig,               (match, p1) => Number(p1) > 3 ? '<span style="font-weight: bold;">' : (Number(p1) < 3 ? '<span style="font-size: 0.9em;">' :'<span>'))
