@@ -50,6 +50,7 @@ function convertDiscussionContent(content) {
     .replace(/(\n|\r\n)/ig,                     (match)     => '<br/>')
     .replace(/(\<br\/\>){1,}/ig,                (match)     => '<br/>')
     .replace(/\[url\=([^]+?)\]/ig,              (match, p1) => `<a href="${p1}">`)
+    .replace(/\[url\]([^]+?)\[\/url\]/ig,              (match, p1) => `<a href="${p1}">${p1}</a>`)
     .replace(/\[\/url\]/ig,                     (match)     => `</a>`)
     .replace(/\[table\]([^]+?)\[\/table\]/ig,   (match, p1) => `<table>${p1.split('<br/>').join('')}</table>`)
     .replace(/\[(table|\/table|td|tr|\/tr|\/td)\]/ig, (match, p1) => `<${p1}>`)
