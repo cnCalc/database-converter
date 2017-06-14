@@ -217,7 +217,8 @@ function convertThreadAndPost(config, conns) {
                     dataset[i].lastDate = dataset[i].posts[dataset[i].posts.length - 1].createDate;
                     dataset[i].lastMember = dataset[i].posts[dataset[i].posts.length - 1].user;
                     dataset[i].replies = dataset[i].posts.length;
-                    dataset[i].posts.forEach(post => {
+                    dataset[i].posts.forEach((post, index) => {
+                      post.index = index + 1;
                       post.content = contentConverter(post.content);
                       post.encoding = 'html';
                     })
