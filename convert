@@ -33,9 +33,9 @@ createConnection(config).then(_conns => {
   conns = _conns;
   return convertMemberProfile(config, conns);
 }).then(() => {
-  return convertThreadAndPost(config, conns);
-}).then(() => {
   return convertAttachment(config, conns);
+}).then(() => {
+  return convertThreadAndPost(config, conns);
 }).then(() => {
   return convertPmMessage(config, conns);
 }).then(() => {

@@ -26,8 +26,23 @@ const { MongoClient } = require('mongodb');
     .replace(/\[\/url\]/ig,                 (match)     => `</a>`)
     .replace(/\<table\>([^]+?)\<\/table\>/ig, (match, p1) => `<table>${p1.split('<br>').join('')}</table>`)
  */
-function convertDiscussionContent(content) {
+function convertDiscussionContent(content, aidMap) {
   let newSizeArray = [undefined, .63, .82, 1, 1.13, 1.5, 2, 3];
+  let attachments = content.match(/\[attach\](\d+)\[\/attach\]/ig);
+  if (attachments !== null) {
+    attachments = attachments.map(attachTag => Number(attachTag.match(/(\d+)/i)[1]));
+    attachments.forEach(aid => {
+      let resolved = '<a class="attachment invalid-attachment">无效附件</a>';
+      let attachment = aidMap[aid];
+      if (attachment && attachment.path && attachment.path.match(/\.(jpg|jpeg|png|bmp|gif)$/)) {
+        // onload="if (this.getBoundingClientRect().top < 0) { console.log(this); window.scrollTo(0, window.scrollY + this.clientHeight) }"
+        resolved = `<img src="/uploads/attachment/forum/${attachment.path}"/>`;
+      } else if (attachment && attachment.path) {
+        resolved = `<a class="attachment" href="/uploads/attachment/forum/${attachment.path}" target="_blank" download="${attachment.filename}">[附件] ${attachment.filename}</a>`;
+      }
+      content = content.split(`[attach]${aid}[/attach]`).join(resolved);
+    })
+  }
   return content
     .replace(/\[\/(size|font)\]/ig,             (match)     => '</span>')
     .replace(/\[(\/backcolor|\/color|)\]/ig,    (match)     => '')
@@ -40,7 +55,6 @@ function convertDiscussionContent(content) {
     .replace(/\[indent\]/ig,                    (match)     => '<blockquote>')
     .replace(/\[\/indent\]/ig,                  (match)     => '</blockquote>')
     .replace(/\[code\]([^]+?)\[\/code\]/ig,     (match, p1)  => '<pre class="code">' + p1.split('<').join('&lt;').split('>').join('&gt;') + '</pre>')
-    .replace(/\[attach\]([^]+?)\[\/attach\]/ig, (match, p1)  => '<attach>' + p1 + '</attach>')
     .replace(/\[\/float\]/ig,                   (match)     => '')
     .replace(/\[(back|)color=([#\w]+?)\]/ig,    (match, p1) => ``)
     .replace(/\[size=(\d+?)\]/ig,               (match, p1) => Number(p1) > 3 ? '<span style="font-weight: bold;">' : (Number(p1) < 3 ? '<span style="font-size: 0.9em;">' :'<span>'))
@@ -56,7 +70,7 @@ function convertDiscussionContent(content) {
     .replace(/\[table\]([^]+?)\[\/table\]/ig,   (match, p1) => `<table>${p1.split('<br/>').join('')}</table>`)
     .replace(/\[(table|\/table|td|tr|\/tr|\/td)\]/ig, (match, p1) => `<${p1}>`)
     .replace(/\[(table|tr|td|)\=([^]+?)\]/ig,   (match, p1, p2) => `<${p1} width=${p2}>`)
-    .replace(/\[quote\]([^]+?)\[\/quote\]/ig,   (match, p1) => `<blockquote>${p1}</blockquote>`)
+    .replace(/\[quote\]([^]+?)\[\/quote\]/ig,   (match, p1) => `<blockquote>${p1}</blockquote>`);
 }
 
 module.exports = convertDiscussionContent;

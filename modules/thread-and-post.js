@@ -114,6 +114,17 @@ function convertThreadAndPost(config, conns) {
         });
       }
 
+      function prepareAttachmentData() {
+        console.log('[ThreadAndPost][Mongo] Fetching attachment data.');
+        return new Promise((resolve, reject) => {
+          conns.mongo.collection('attachment').find({}).toArray((err, data) => {
+            let attachMap = {};
+            data.forEach(item => attachMap[item.aid] = item);
+            resolve(attachMap);
+          })
+        });
+      }
+
       function prepareForumType() {
         console.log('[ThreadAndPost][MySQL] Fetching forum type. ');
         return new Promise((resolve, reject) => {
@@ -180,7 +191,7 @@ function convertThreadAndPost(config, conns) {
         return transformed;
       }
 
-      function attachThreadPosts(dataset, uidMap) {
+      function attachThreadPosts(dataset, uidMap, aidMap) {
         if (!config.threadAndPost.convertPost) {
           return Promise.resolve(dataset);
         }
@@ -219,7 +230,7 @@ function convertThreadAndPost(config, conns) {
                     dataset[i].replies = dataset[i].posts.length;
                     dataset[i].posts.forEach((post, index) => {
                       post.index = index + 1;
-                      post.content = contentConverter(post.content);
+                      post.content = contentConverter(post.content, aidMap);
                       post.encoding = 'html';
                     })
                   }
@@ -254,9 +265,10 @@ function convertThreadAndPost(config, conns) {
       try {
         await cleanupMongo();
         let uidMap = await prepareUserData();
+        let aidMap = await prepareAttachmentData();
         let threadData = await fetchThreadData();
         let dataset = transformThreadData(threadData, uidMap);
-        dataset = await attachThreadPosts(dataset, uidMap);
+        dataset = await attachThreadPosts(dataset, uidMap, aidMap);
         await insertMongo(dataset);
         resolve();
       } catch (e) {
