@@ -6,6 +6,14 @@ function convertMemberProfile(config, conns) {
   }
   return new Promise(async (resolve, reject) => {
 
+    function getMemberAvatarUrl (uid) {
+      let pad = number => ('000000000' + number.toString()).substr(-9);
+
+      let matchResult = pad(uid).match(/(\d{3})(\d{2})(\d{2})(\d{2})/);
+      return `/uploads/avatar/${matchResult[1]}/${matchResult[2]}/${matchResult[3]}/${matchResult[4]}_avatar_big.jpg`;
+    }
+    
+
     function fetchMemberData() {
       console.log('[MemberProfile][MySQL] Fetching profiles.');
       return new Promise((resolve, reject) => {
@@ -90,7 +98,7 @@ function convertMemberProfile(config, conns) {
             reject(err);
           }
           else {
-            resolve();
+            resolve()
           }
         });
       });
@@ -110,6 +118,10 @@ function convertMemberProfile(config, conns) {
         },
         ...resSet
       ]
+      resSet.forEach(profile => {
+        const path = getMemberAvatarUrl(profile.uid);
+        profile.avatar = require('fs').existsSync(require('path').join(config.memberProfile.assetPath, path)) ? path : null;
+      });
       await insertMongo(resSet);
       resolve();
     } catch (err) {

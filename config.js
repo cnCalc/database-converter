@@ -12,7 +12,8 @@ module.exports = {
     convert: true,          // ..
     cleanup: true,          // Delete all data in MongoDB.
     skipFourZero: false,    // Skip all users with empty brith{day|month|year} and gender.
-    skipArchiveTable: false // Skip archived user.
+    skipArchiveTable: false,// Skip archived user.
+    assetPath: '/home/ntzyz/cncalc/serainTalk/'    
   },
   threadAndPost: {
     convert: true,

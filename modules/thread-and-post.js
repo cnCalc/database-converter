@@ -220,7 +220,14 @@ function convertThreadAndPost(config, conns) {
                       encoding: 'discuz',
                       content: post.message,
                       allowScript: false,
-                      votes: [],
+                      votes: {
+                        'up': 0,
+                        'down': 0,
+                        'laugh': 0,
+                        'doubt': 0,
+                        'cheer': 0,
+                        'emmmm': 0,
+                      },
                       status: null,
                     };
                   });
