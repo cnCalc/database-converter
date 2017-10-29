@@ -176,7 +176,7 @@ function convertThreadAndPost(config, conns) {
             warned.push(item.authorid)
           }
           obj.title = item.subject;
-          obj.lastDate = obj.createDate = item.dateline;
+          obj.lastDate = obj.createDate = item.dateline * 1000;
           obj.lastMember = null;
           obj.views = item.views;
           obj.replies = 0;
@@ -216,7 +216,7 @@ function convertThreadAndPost(config, conns) {
                     }
                     return {
                       user: uidMap[post.authorid],
-                      createDate: post.dateline,
+                      createDate: post.dateline * 1000,
                       encoding: 'discuz',
                       content: post.message,
                       allowScript: false,

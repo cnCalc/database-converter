@@ -121,6 +121,8 @@ function convertMemberProfile(config, conns) {
       resSet.forEach(profile => {
         const path = getMemberAvatarUrl(profile.uid);
         profile.avatar = require('fs').existsSync(require('path').join(config.memberProfile.assetPath, path)) ? path : null;
+        if (profile.regdate) profile.regdate *= 1000;
+        if (profile.lastlogintime) profile.lastlogintime *= 1000;
       });
       await insertMongo(resSet);
       resolve();

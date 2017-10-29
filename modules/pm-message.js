@@ -69,7 +69,7 @@ function convertPmMessage(config, conns) {
                   id: uidMap[el.receiver],
                   read: true,
                 },
-                date: el.dateline,
+                date: el.dateline * 1000,
                 content: el.message,
                 encoding: 'discuz'
               }
