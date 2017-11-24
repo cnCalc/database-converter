@@ -239,6 +239,13 @@ function convertThreadAndPost(config, conns) {
                       post.index = index + 1;
                       post.content = contentConverter(post.content, aidMap);
                       post.encoding = 'html';
+                      
+                      const pattern = /^<i=s> 本帖最后由 [^]+? 于 (\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}) 编辑 <\/i><br\/>/i;
+                      let updateMatchRes = post.content.match(pattern);
+                      if (updateMatchRes) {
+                        post.updateDate = new Date(updateMatchRes[1], updateMatchRes[2] - 1, updateMatchRes[3], updateMatchRes[4], updateMatchRes[5]).getTime();
+                        post.content = post.content.replace(pattern, '');
+                      }
                     })
                   }
                   resolve();
