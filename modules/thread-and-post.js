@@ -221,14 +221,15 @@ function convertThreadAndPost(config, conns) {
                       content: post.message,
                       allowScript: false,
                       votes: {
-                        'up': 0,
-                        'down': 0,
-                        'laugh': 0,
-                        'doubt': 0,
-                        'cheer': 0,
-                        'emmmm': 0,
+                        'up': [],
+                        'down': [],
+                        'laugh': [],
+                        'doubt': [],
+                        'cheer': [],
+                        'emmmm': [],
                       },
-                      status: null,
+                      status: { type: 'ok' },
+                      pid: post.pid,
                     };
                   });
                   if (dataset[i].posts.length > 0) {
@@ -259,7 +260,41 @@ function convertThreadAndPost(config, conns) {
           }).catch(e => {
             reject(e);
           })
-        })        
+        })
+      }
+
+      function attachRates(dataset, uidMap) {
+        console.log('[ThreadAndPost][undef] Fetching posts rates.')
+        return new Promise((resolve, reject) => {
+          conns.mysql.query({
+            sql: 'select * from cncalc.cbs_forum_ratelog;'
+          }, (err, data) => {
+            let rateMap = {};
+            for (let record of data) {
+              if (!rateMap[record.pid]) {
+                rateMap[record.pid] = {}
+              }
+              if (!rateMap[record.pid][record.uid]) {
+                rateMap[record.pid][record.uid] = 0;
+              }
+              rateMap[record.pid][record.uid] += Number(record.score);
+            }
+            dataset.forEach(discussion => {
+              discussion.posts.forEach(post => {
+                if (rateMap[post.pid]) {
+                  for (let uid of Object.keys(rateMap[post.pid])) {
+                    if (rateMap[post.pid][uid] > 0) {
+                      post.votes.up.push(uidMap[uid]);
+                    } else if (rateMap[post.pid][uid] < 0) {
+                      post.votes.down.push(uidMap[uid]);
+                    }
+                  }
+                }
+              });
+            });
+            resolve(dataset);
+          })
+        })
       }
 
       function insertMongo(data) {
@@ -283,6 +318,7 @@ function convertThreadAndPost(config, conns) {
         let threadData = await fetchThreadData();
         let dataset = transformThreadData(threadData, uidMap);
         dataset = await attachThreadPosts(dataset, uidMap, aidMap);
+        dataset = await attachRates(dataset, uidMap, aidMap);
         await insertMongo(dataset);
         resolve();
       } catch (e) {
