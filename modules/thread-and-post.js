@@ -79,6 +79,7 @@ const categoriesMap = {
 }
 
 const contentConverter = require('./discussion-content');
+const { ObjectId } = require('mongodb');
 
 function convertThreadAndPost(config, conns) {
   if (!config.threadAndPost.convert) {
@@ -198,6 +199,7 @@ function convertThreadAndPost(config, conns) {
 
         return new Promise((resolve, reject) => {
           console.log('[ThreadAndPost][MySQL] Fetching posts data (it may take some time).')
+          let pidMap = {};
           let promiseArray = new Array(dataset.length);
           for (let i = 0; i != dataset.length; ++i) {
             promiseArray[i] = new Promise((resolve, reject) => {
@@ -209,6 +211,7 @@ function convertThreadAndPost(config, conns) {
                   reject(err);
                 } else {
                   // Skip 每日签到贴
+                  dataset[i]._id = ObjectId();
                   dataset[i].participants = [];
                   dataset[i].posts = (dataset[i].tid === 10525) ? [] : data.map(post => {
                     if (dataset[i].participants.indexOf(uidMap[post.authorid]) < 0) {
@@ -223,10 +226,6 @@ function convertThreadAndPost(config, conns) {
                       votes: {
                         'up': [],
                         'down': [],
-                        'laugh': [],
-                        'doubt': [],
-                        'cheer': [],
-                        'emmmm': [],
                       },
                       status: { type: 'ok' },
                       pid: post.pid,
@@ -240,12 +239,26 @@ function convertThreadAndPost(config, conns) {
                       post.index = index + 1;
                       post.content = contentConverter(post.content, aidMap);
                       post.encoding = 'html';
+
+                      pidMap[post.pid] = {
+                        memberId: post.user,
+                        value: index + 1,
+                        type: 'index',
+                      }
                       
                       const pattern = /^<i=s> 本帖最后由 [^]+? 于 (\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}) 编辑 <\/i><br\/>/i;
                       let updateMatchRes = post.content.match(pattern);
                       if (updateMatchRes) {
                         post.updateDate = new Date(updateMatchRes[1], updateMatchRes[2] - 1, updateMatchRes[3], updateMatchRes[4], updateMatchRes[5]).getTime();
                         post.content = post.content.replace(pattern, '');
+                      }
+
+                    // @<Member ID>#<Discussion ID>#<Post Index>
+                    const replyPatten = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
+                      let replyMatchRes = post.content.match(replyPatten);
+                      if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
+                        post.replyTo = pidMap[replyMatchRes[1]];
+                        post.content = post.content.replace(replyPatten, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
                       }
                     })
                   }
