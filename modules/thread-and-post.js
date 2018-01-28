@@ -79,6 +79,7 @@ const categoriesMap = {
 }
 
 const contentConverter = require('./discussion-content');
+const jieba = require('nodejieba');
 const { ObjectId } = require('mongodb');
 
 function convertThreadAndPost(config, conns) {
@@ -333,6 +334,22 @@ function convertThreadAndPost(config, conns) {
         dataset = await attachThreadPosts(dataset, uidMap, aidMap);
         dataset = await attachRates(dataset, uidMap, aidMap);
         await insertMongo(dataset);
+
+        console.log("Creating search caches");
+        let searchCache = [];
+        await conns.mongo.collection('searchCache').deleteMany({});
+        for (let item of dataset) {
+          for (let post of item.posts) {
+            const key = `${item._id}/${post.index}`;
+            searchCache.push({
+              key,
+              title: item.title,
+              content: jieba.cut(post.content.replace(/<[^>]+?>/, ''))
+            });
+          }
+        }
+        console.log("Inserting...");
+        await conns.mongo.collection('searchCache').insertMany(searchCache);
         resolve();
       } catch (e) {
         console.log(e);
