@@ -246,7 +246,7 @@ function convertThreadAndPost(config, conns) {
                         value: index + 1,
                         type: 'index',
                       }
-                      
+
                       const pattern = /^<i=s> 本帖最后由 [^]+? 于 (\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}) 编辑 <\/i><br\/>/i;
                       let updateMatchRes = post.content.match(pattern);
                       if (updateMatchRes) {
@@ -254,8 +254,8 @@ function convertThreadAndPost(config, conns) {
                         post.content = post.content.replace(pattern, '');
                       }
 
-                    // @<Member ID>#<Discussion ID>#<Post Index>
-                    const replyPatten = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
+                      // @<Member ID>#<Discussion ID>#<Post Index>
+                      const replyPatten = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
                       let replyMatchRes = post.content.match(replyPatten);
                       if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
                         post.replyTo = pidMap[replyMatchRes[1]];
@@ -325,6 +325,25 @@ function convertThreadAndPost(config, conns) {
         });
       }
 
+      function jiebaFieldFilter(cutArray) {
+        let tempStr = '';
+        let tempList = [];
+        for (let asc of cutArray) {
+      
+          if (asc) {
+            if (/[a-zA-z0-9]/g.test(asc)) {
+              tempStr += asc;
+            } else {
+              if (tempStr.trim()) tempList.push(tempStr);
+              if (!/[，。？！“”‘’：；（）、 ,\./\\:;'"!]/g.test(asc)) tempList.push(asc);
+              tempStr = '';
+            }
+          }
+        }
+        if (tempStr.trim()) tempList.push(tempStr);
+        return tempList;
+      }
+
       try {
         await cleanupMongo();
         let uidMap = await prepareUserData();
@@ -344,7 +363,7 @@ function convertThreadAndPost(config, conns) {
             searchCache.push({
               key,
               title: item.title,
-              content: jieba.cut(post.content.replace(/<[^>]+?>/, ''))
+              content: jiebaFieldFilter(jieba.cut(post.content.replace(/<[^>]+?>/, '')))
             });
           }
         }
