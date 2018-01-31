@@ -324,7 +324,7 @@ function convertThreadAndPost(config, conns) {
           });
         });
       }
-
+      
       function jiebaFieldFilter(cutArray) {
         let tempStr = '';
         let tempList = [];
@@ -332,7 +332,7 @@ function convertThreadAndPost(config, conns) {
       
           if (asc) {
             if (/[a-zA-z0-9]/g.test(asc)) {
-              tempStr += asc;
+              tempStr += asc.toLowerCase();
             } else {
               if (tempStr.trim()) tempList.push(tempStr);
               if (!/[，。？！“”‘’：；（）、 ,\./\\:;'"!]/g.test(asc)) tempList.push(asc);
