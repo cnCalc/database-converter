@@ -70,7 +70,8 @@ function convertDiscussionContent(content, aidMap) {
     .replace(/\[table\]([^]+?)\[\/table\]/ig,   (match, p1) => `<table>${p1.split('<br/>').join('')}</table>`)
     .replace(/\[(table|\/table|td|tr|\/tr|\/td)\]/ig, (match, p1) => `<${p1}>`)
     .replace(/\[(table|tr|td|)\=([^]+?)\]/ig,   (match, p1, p2) => `<${p1} width=${p2}>`)
-    .replace(/\[quote\]([^]+?)\[\/quote\]/ig,   (match, p1) => `<blockquote>${p1}</blockquote>`);
+    .replace(/\[quote\]([^]+?)\[\/quote\]/ig,   (match, p1) => `<blockquote>${p1}</blockquote>`)
+    .replace(/<br\/>/g, "<br/>\n");
 }
 
 module.exports = convertDiscussionContent;
