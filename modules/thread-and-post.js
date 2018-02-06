@@ -79,6 +79,7 @@ const categoriesMap = {
 }
 
 const contentConverter = require('./discussion-content');
+const { ObjectId } = require('mongodb');
 
 function convertThreadAndPost(config, conns) {
   if (!config.threadAndPost.convert) {
@@ -183,7 +184,7 @@ function convertThreadAndPost(config, conns) {
           obj.tags = [];
           obj.category = categoriesMap[item.category] || item.category;
           obj.tid = item.tid;
-          obj.status = null; // TODO
+          obj.status = { type: 'ok' };
 
           transformed.push(obj);
         });
@@ -198,6 +199,7 @@ function convertThreadAndPost(config, conns) {
 
         return new Promise((resolve, reject) => {
           console.log('[ThreadAndPost][MySQL] Fetching posts data (it may take some time).')
+          let pidMap = {};
           let promiseArray = new Array(dataset.length);
           for (let i = 0; i != dataset.length; ++i) {
             promiseArray[i] = new Promise((resolve, reject) => {
@@ -209,6 +211,7 @@ function convertThreadAndPost(config, conns) {
                   reject(err);
                 } else {
                   // Skip 每日签到贴
+                  dataset[i]._id = ObjectId();
                   dataset[i].participants = [];
                   dataset[i].posts = (dataset[i].tid === 10525) ? [] : data.map(post => {
                     if (dataset[i].participants.indexOf(uidMap[post.authorid]) < 0) {
@@ -221,14 +224,11 @@ function convertThreadAndPost(config, conns) {
                       content: post.message,
                       allowScript: false,
                       votes: {
-                        'up': 0,
-                        'down': 0,
-                        'laugh': 0,
-                        'doubt': 0,
-                        'cheer': 0,
-                        'emmmm': 0,
+                        'up': [],
+                        'down': [],
                       },
-                      status: null,
+                      status: { type: 'ok' },
+                      pid: post.pid,
                     };
                   });
                   if (dataset[i].posts.length > 0) {
@@ -239,6 +239,27 @@ function convertThreadAndPost(config, conns) {
                       post.index = index + 1;
                       post.content = contentConverter(post.content, aidMap);
                       post.encoding = 'html';
+
+                      pidMap[post.pid] = {
+                        memberId: post.user,
+                        value: index + 1,
+                        type: 'index',
+                      }
+
+                      const pattern = /^<i=s> 本帖最后由 [^]+? 于 (\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}) 编辑 <\/i><br\/>/i;
+                      let updateMatchRes = post.content.match(pattern);
+                      if (updateMatchRes) {
+                        post.updateDate = new Date(updateMatchRes[1], updateMatchRes[2] - 1, updateMatchRes[3], updateMatchRes[4], updateMatchRes[5]).getTime();
+                        post.content = post.content.replace(pattern, '');
+                      }
+
+                      // @<Member ID>#<Discussion ID>#<Post Index>
+                      const replyPatten = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
+                      let replyMatchRes = post.content.match(replyPatten);
+                      if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
+                        post.replyTo = pidMap[replyMatchRes[1]];
+                        post.content = post.content.replace(replyPatten, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
+                      }
                     })
                   }
                   resolve();
@@ -252,7 +273,41 @@ function convertThreadAndPost(config, conns) {
           }).catch(e => {
             reject(e);
           })
-        })        
+        })
+      }
+
+      function attachRates(dataset, uidMap) {
+        console.log('[ThreadAndPost][undef] Fetching posts rates.')
+        return new Promise((resolve, reject) => {
+          conns.mysql.query({
+            sql: 'select * from cncalc.cbs_forum_ratelog;'
+          }, (err, data) => {
+            let rateMap = {};
+            for (let record of data) {
+              if (!rateMap[record.pid]) {
+                rateMap[record.pid] = {}
+              }
+              if (!rateMap[record.pid][record.uid]) {
+                rateMap[record.pid][record.uid] = 0;
+              }
+              rateMap[record.pid][record.uid] += Number(record.score);
+            }
+            dataset.forEach(discussion => {
+              discussion.posts.forEach(post => {
+                if (rateMap[post.pid]) {
+                  for (let uid of Object.keys(rateMap[post.pid])) {
+                    if (rateMap[post.pid][uid] > 0) {
+                      post.votes.up.push(uidMap[uid]);
+                    } else if (rateMap[post.pid][uid] < 0) {
+                      post.votes.down.push(uidMap[uid]);
+                    }
+                  }
+                }
+              });
+            });
+            resolve(dataset);
+          })
+        })
       }
 
       function insertMongo(data) {
@@ -276,6 +331,7 @@ function convertThreadAndPost(config, conns) {
         let threadData = await fetchThreadData();
         let dataset = transformThreadData(threadData, uidMap);
         dataset = await attachThreadPosts(dataset, uidMap, aidMap);
+        dataset = await attachRates(dataset, uidMap, aidMap);
         await insertMongo(dataset);
         resolve();
       } catch (e) {
