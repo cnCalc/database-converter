@@ -184,7 +184,7 @@ function convertThreadAndPost(config, conns) {
           obj.tags = [];
           obj.category = categoriesMap[item.category] || item.category;
           obj.tid = item.tid;
-          obj.status = null; // TODO
+          obj.status = { type: 'ok' };
 
           transformed.push(obj);
         });
@@ -245,7 +245,7 @@ function convertThreadAndPost(config, conns) {
                         value: index + 1,
                         type: 'index',
                       }
-                      
+
                       const pattern = /^<i=s> 本帖最后由 [^]+? 于 (\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}) 编辑 <\/i><br\/>/i;
                       let updateMatchRes = post.content.match(pattern);
                       if (updateMatchRes) {
@@ -253,8 +253,8 @@ function convertThreadAndPost(config, conns) {
                         post.content = post.content.replace(pattern, '');
                       }
 
-                    // @<Member ID>#<Discussion ID>#<Post Index>
-                    const replyPatten = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
+                      // @<Member ID>#<Discussion ID>#<Post Index>
+                      const replyPatten = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
                       let replyMatchRes = post.content.match(replyPatten);
                       if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
                         post.replyTo = pidMap[replyMatchRes[1]];
