@@ -59,23 +59,33 @@ function convertPmMessage(config, conns) {
         Promise.all([prepareUserData(), ...Array(10).fill(0).map((el, off) => off).map(fetchPmList)])
           .then(values => {
             let uidMap = values.shift();
-            let pms = values.reduce((a, b) => [...a, ...b]).filter(el => el.sender !== el.receiver).map(el => {
-              return {
-                from: {
-                  id: uidMap[el.sender],
-                  read: true,
-                },
-                to: {
-                  id: uidMap[el.receiver],
-                  read: true,
-                },
-                date: el.dateline * 1000,
-                content: el.message,
-                encoding: 'discuz'
+            let sessionMap = {};
+            let pms = values.reduce((a, b) => [...a, ...b]).filter(el => el.sender !== el.receiver).forEach(el => {
+              let key = [el.sender, el.receiver].sort();
+              key = key.map(i => i.toString()).join('');
+              if (!sessionMap[key]) {
+                sessionMap[key] = {
+                  members: [uidMap[el.sender], uidMap[el.receiver]],
+                  timeline: [],
+                }
               }
-            });
+
+              const session = sessionMap[key];
+              session.timeline.push({
+                content: el.message,
+                from: uidMap[el.sender],
+                date: el.dateline * 1000,
+              });
+            })
+
+            let array = [];
+            for (let key of Object.keys(sessionMap)) {
+              array.push(sessionMap[key]);
+            }
+
             console.log('[PmMessage][Mongo] Inserting data into MongoDB...');
-            conns.mongo.collection('mail').insertMany(pms, (err, res) => {
+
+            conns.mongo.collection('message').insertMany(array, (err, res) => {
               if (err) {
                 reject(err);
               }
