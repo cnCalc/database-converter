@@ -254,11 +254,19 @@ function convertThreadAndPost(config, conns) {
                       }
 
                       // @<Member ID>#<Discussion ID>#<Post Index>
-                      const replyPatten = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
-                      let replyMatchRes = post.content.match(replyPatten);
+                      const replyPatten0 = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
+                      let replyMatchRes = post.content.match(replyPatten0);
                       if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
                         post.replyTo = pidMap[replyMatchRes[1]];
-                        post.content = post.content.replace(replyPatten, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
+                        post.content = post.content.replace(replyPatten0, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
+                        return;
+                      }
+
+                      const replyPatten1 = /<blockquote>[^]+?redirect.php\?goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
+                      replyMatchRes = post.content.match(replyPatten1);
+                      if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
+                        post.replyTo = pidMap[replyMatchRes[1]];
+                        post.content = post.content.replace(replyPatten1, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
                         return;
                       }
 
@@ -268,11 +276,9 @@ function convertThreadAndPost(config, conns) {
                       if (!replyMatchRes) {
                         return;
                       }
-                      // console.log(replyMatchRes[1]);
                       for (let idx = 0; idx < index; idx++) {
                         let short = replyMatchRes[1].trim().replace(/\.+$/, '').trim();
                         if (dataset[i].posts[idx].content.indexOf(short) >= 0) {
-                          // console.log()
                           post.replyTo = pidMap[dataset[i].posts[idx].pid];
                           post.content = post.content.replace(replyPatten2, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
                           break;
