@@ -1,4 +1,5 @@
 'use strict';
+const { ObjectId } = require('mongodb');
 
 function convertAttachments(config, conns) {
   if (!config.attachment.convert) {
@@ -53,36 +54,43 @@ function convertAttachments(config, conns) {
         });
       }
 
-      cleanupMongo().then(() => {
-        Promise.all([prepareUserData(), ...Array(10).fill(0).map((el, off) => off).concat('unused').map(fetchAttachments)])
-          .then(values => {
-            let uidMap = values.shift();
-            let attachments = values.reduce((a, b) => [...Array.from(a), ...Array.from(b)]).map(row => {
-              return {
-                uploader: uidMap[row.uid],
-                date: row.dateline,
-                filename: row.filename,
-                path: row.attachment,
-                downloadCount: row.downloads,
-                aid: row.aid,
+      cleanupMongo().then(async () => {
+        let values = await Promise.all([prepareUserData(), ...Array(10).fill(0).map((el, off) => off).concat('unused').map(fetchAttachments)]);
+        let uidMap = values.shift();
+        let update = {};
+        let attachments = values.reduce((a, b) => [...Array.from(a), ...Array.from(b)]);
+        // .map(row => {
+        //   return {
+        //     aid: row.aid,
+        //     uid: row.uid,
+        //     originalName: row.filename,
+        //     fileName: row.attachment,
+        //     size: -1,
+        //     downloadCount: row.downloads,
+        //   }
+        // });
+        console.log('[Attachments][Mongo] Inserting data into MongoDB...');
+        for (let attachment of attachments) {
+          let r = await conns.mongo.collection('common_member').updateOne(
+            { _id: uidMap[attachment.uid] },
+            {
+              $push: {
+                attachment: {
+                  _id: ObjectId(),
+                  pid: attachment.pid,
+                  aid: attachment.aid,
+                  originalName: attachment.filename,
+                  fileName: attachment.attachment,
+                  size: -1,
+                  referer: [],
+                }
               }
-            });
-            console.log('[Attachments][Mongo] Inserting data into MongoDB...');
-            conns.mongo.collection('attachment').insertMany(attachments, (err, res) => {
-              if (err) {
-                reject(err);
-              }
-              else {
-                resolve();
-              }
-            });
-          })
-          .catch(err => {
-            console.log(err)
-            reject(err);
-          });
+            }
+          );
+        }
+        
+        resolve();
       });
-
     });
   }
 }

@@ -68,6 +68,7 @@ function convertMemberProfile(config, conns) {
           }
           delete row['password'];
           delete row['salt'];
+          row.attachment = [];
         });
         resolve(data);
       });

@@ -26,20 +26,30 @@ const { MongoClient } = require('mongodb');
     .replace(/\[\/url\]/ig,                 (match)     => `</a>`)
     .replace(/\<table\>([^]+?)\<\/table\>/ig, (match, p1) => `<table>${p1.split('<br>').join('')}</table>`)
  */
-function convertDiscussionContent(content, aidMap) {
+function convertDiscussionContent(post, uidMap) {
+  let content = post.content;
   let newSizeArray = [undefined, .63, .82, 1, 1.13, 1.5, 2, 3];
   let attachments = content.match(/\[attach\](\d+)\[\/attach\]/ig);
   if (attachments !== null) {
     attachments = attachments.map(attachTag => Number(attachTag.match(/(\d+)/i)[1]));
     attachments.forEach(aid => {
       let resolved = '<a class="attachment invalid-attachment">无效附件</a>';
-      let attachment = aidMap[aid];
-      if (attachment && attachment.path && attachment.path.match(/\.(jpg|jpeg|png|bmp|gif)$/)) {
-        // onload="if (this.getBoundingClientRect().top < 0) { console.log(this); window.scrollTo(0, window.scrollY + this.clientHeight) }"
-        resolved = `<img src="/uploads/attachment/forum/${attachment.path}"/>`;
-      } else if (attachment && attachment.path) {
-        resolved = `<a class="attachment" href="/uploads/attachment/forum/${attachment.path}" target="_blank" download="${attachment.filename}">[附件] ${attachment.filename}</a>`;
-      }
+      do {
+        if (!uidMap[post.uid]) {
+          break;
+        }
+        let attachment = uidMap[post.uid].attachment.filter(a => a.aid === aid);
+        if (attachment.length !== 1) {
+          break;
+        }
+        attachment = attachment[0];
+        if (attachment && attachment.fileName && attachment.fileName.match(/\.(jpg|jpeg|png|bmp|gif)$/)) {
+          resolved = `<img src="/uploads/attachment/forum/${attachment.fileName}"/>`;
+        } else if (attachment && attachment.fileName) {
+          resolved = `<a class="attachment" href="#attach-${attachment._id}" target="_blank">[附件] ${attachment.originalName}</a>`;
+          // post.attachments.push(attachment._id);
+        }  
+      } while (0);
       content = content.split(`[attach]${aid}[/attach]`).join(resolved);
     })
   }
@@ -65,7 +75,7 @@ function convertDiscussionContent(content, aidMap) {
     .replace(/(\n|\r\n)/ig,                     (match)     => '<br/>')
     .replace(/(\<br\/\>){1,}/ig,                (match)     => '<br/>')
     .replace(/\[url\=([^]+?)\]/ig,              (match, p1) => `<a href="${p1}">`)
-    .replace(/\[url\]([^]+?)\[\/url\]/ig,              (match, p1) => `<a href="${p1}">${p1}</a>`)
+    .replace(/\[url\]([^]+?)\[\/url\]/ig,       (match, p1) => `<a href="${p1}">${p1}</a>`)
     .replace(/\[\/url\]/ig,                     (match)     => `</a>`)
     .replace(/\[table\]([^]+?)\[\/table\]/ig,   (match, p1) => `<table>${p1.split('<br/>').join('')}</table>`)
     .replace(/\[(table|\/table|td|tr|\/tr|\/td)\]/ig, (match, p1) => `<${p1}>`)

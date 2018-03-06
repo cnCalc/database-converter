@@ -109,21 +109,23 @@ function convertThreadAndPost(config, conns) {
         return new Promise((resolve, reject) => {
           conns.mongo.collection('common_member').find({}).toArray((err, data) => {
             let userMap = {};
-            data.forEach(item => userMap[item.uid] = item._id);
+            data.forEach(item => userMap[item.uid] = item);
             resolve(userMap);
           })
         });
       }
 
-      function prepareAttachmentData() {
+      function prepareAttachmentData(uidMap) {
         console.log('[ThreadAndPost][Mongo] Fetching attachment data.');
         return new Promise((resolve, reject) => {
-          conns.mongo.collection('attachment').find({}).toArray((err, data) => {
-            let attachMap = {};
-            data.forEach(item => attachMap[item.aid] = item);
-            resolve(attachMap);
+          let attachMap = {};
+          Object.keys(uidMap).forEach(uid => {
+            uidMap[uid].attachment.forEach(attach => {
+              attachMap[attach.aid] = attach;
+            })
           })
-        });
+          resolve(attachMap);
+      });
       }
 
       function prepareForumType() {
@@ -170,7 +172,7 @@ function convertThreadAndPost(config, conns) {
         threadData.forEach(item => {
           let obj = {};
           if (uidMap[item.authorid]) {
-            obj.creater = uidMap[item.authorid];
+            obj.creater = uidMap[item.authorid]._id;
           } else if (warned.indexOf(item.authorid) < 0) {
             obj.creater = null;
             console.log('[WARN] Unknown author id: ' + item.authorid + '. Maybe a deleted spammer?');
@@ -200,6 +202,15 @@ function convertThreadAndPost(config, conns) {
         return new Promise((resolve, reject) => {
           console.log('[ThreadAndPost][MySQL] Fetching posts data (it may take some time).')
           let pidMap = {};
+          let pidAttachMap = {};
+          Object.keys(aidMap).forEach(aid => {
+            const attach = aidMap[aid];
+            if (pidAttachMap[attach.pid]) {
+              pidAttachMap[attach.pid].push(attach._id);
+            } else {
+              pidAttachMap[attach.pid] = [attach._id];
+            }
+          })
           let promiseArray = new Array(dataset.length);
           for (let i = 0; i != dataset.length; ++i) {
             promiseArray[i] = new Promise((resolve, reject) => {
@@ -212,13 +223,13 @@ function convertThreadAndPost(config, conns) {
                 } else {
                   // Skip 每日签到贴
                   dataset[i]._id = ObjectId();
-                  dataset[i].participants = [];
+                  // dataset[i].participants = [];
                   dataset[i].posts = (dataset[i].tid === 10525) ? [] : data.map(post => {
-                    if (dataset[i].participants.indexOf(uidMap[post.authorid]) < 0) {
-                      dataset[i].participants.push(uidMap[post.authorid]);
-                    }
+                    // if (dataset[i].participants.indexOf(uidMap[post.authorid]._id) < 0) {
+                    //   dataset[i].participants.push(uidMap[post.authorid]._id);
+                    // }
                     return {
-                      user: uidMap[post.authorid],
+                      user: uidMap[post.authorid] ? uidMap[post.authorid]._id : null,
                       createDate: post.dateline * 1000,
                       encoding: 'discuz',
                       content: post.message,
@@ -229,6 +240,7 @@ function convertThreadAndPost(config, conns) {
                       },
                       status: { type: 'ok' },
                       pid: post.pid,
+                      uid: post.authorid,
                     };
                   });
                   if (dataset[i].posts.length > 0) {
@@ -237,8 +249,10 @@ function convertThreadAndPost(config, conns) {
                     dataset[i].replies = dataset[i].posts.length;
                     dataset[i].posts.forEach((post, index) => {
                       post.index = index + 1;
-                      post.content = contentConverter(post.content, aidMap);
+                      // post.attachments = [];
+                      post.content = contentConverter(post, uidMap);
                       post.encoding = 'html';
+                      post.attachments = pidAttachMap[post.pid];
 
                       pidMap[post.pid] = {
                         memberId: post.user,
@@ -320,10 +334,10 @@ function convertThreadAndPost(config, conns) {
               discussion.posts.forEach(post => {
                 if (rateMap[post.pid]) {
                   for (let uid of Object.keys(rateMap[post.pid])) {
-                    if (rateMap[post.pid][uid] > 0) {
-                      post.votes.up.push(uidMap[uid]);
-                    } else if (rateMap[post.pid][uid] < 0) {
-                      post.votes.down.push(uidMap[uid]);
+                    if (rateMap[post.pid][uid] > 0 && uidMap[uid]) {
+                      post.votes.up.push(uidMap[uid]._id);
+                    } else if (rateMap[post.pid][uid] < 0 && uidMap[uid]) {
+                      post.votes.down.push(uidMap[uid]._id);
                     }
                   }
                 }
@@ -351,7 +365,7 @@ function convertThreadAndPost(config, conns) {
       try {
         await cleanupMongo();
         let uidMap = await prepareUserData();
-        let aidMap = await prepareAttachmentData();
+        let aidMap = await prepareAttachmentData(uidMap);
         let threadData = await fetchThreadData();
         let dataset = transformThreadData(threadData, uidMap);
         dataset = await attachThreadPosts(dataset, uidMap, aidMap);
