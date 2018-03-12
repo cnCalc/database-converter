@@ -38,7 +38,7 @@ function convertDiscussionContent(post, uidMap) {
         if (!uidMap[post.uid]) {
           break;
         }
-        let attachment = uidMap[post.uid].attachment.filter(a => a.aid === aid);
+        let attachment = uidMap[post.uid].attachments.filter(a => a.aid === aid);
         if (attachment.length !== 1) {
           break;
         }

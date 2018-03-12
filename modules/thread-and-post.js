@@ -120,7 +120,7 @@ function convertThreadAndPost(config, conns) {
         return new Promise((resolve, reject) => {
           let attachMap = {};
           Object.keys(uidMap).forEach(uid => {
-            uidMap[uid].attachment.forEach(attach => {
+            uidMap[uid].attachments.forEach(attach => {
               attachMap[attach.aid] = attach;
             })
           })
