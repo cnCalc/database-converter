@@ -75,7 +75,7 @@ function convertAttachments(config, conns) {
             { _id: uidMap[attachment.uid] },
             {
               $push: {
-                attachment: {
+                attachments: {
                   _id: ObjectId(),
                   pid: attachment.pid,
                   aid: attachment.aid,
