@@ -2,7 +2,7 @@ module.exports = {
   mysql: {
     host: '::1',
     user: 'root',
-    password: 'kasorameow',
+    password: '',
     database: 'cncalc'
   },
   mongo: {

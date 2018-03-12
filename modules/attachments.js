@@ -71,24 +71,19 @@ function convertAttachments(config, conns) {
         // });
         console.log('[Attachments][Mongo] Inserting data into MongoDB...');
         for (let attachment of attachments) {
-          let r = await conns.mongo.collection('common_member').updateOne(
-            { _id: uidMap[attachment.uid] },
+          let r = await conns.mongo.collection('attachment').insertOne(
             {
-              $push: {
-                attachments: {
-                  _id: ObjectId(),
-                  pid: attachment.pid,
-                  aid: attachment.aid,
-                  originalName: attachment.filename,
-                  fileName: attachment.attachment,
-                  size: -1,
-                  referer: [],
-                }
-              }
+              _id: ObjectId(),
+              pid: attachment.pid,
+              aid: attachment.aid,
+              fileName: attachment.filename,
+              filePath: attachment.attachment,
+              size: attachment.filesize,
+              referer: [],
             }
           );
         }
-        
+
         resolve();
       });
     });

@@ -119,13 +119,11 @@ function convertThreadAndPost(config, conns) {
         console.log('[ThreadAndPost][Mongo] Fetching attachment data.');
         return new Promise((resolve, reject) => {
           let attachMap = {};
-          Object.keys(uidMap).forEach(uid => {
-            uidMap[uid].attachments.forEach(attach => {
-              attachMap[attach.aid] = attach;
-            })
-          })
-          resolve(attachMap);
-      });
+          conns.mongo.collection('attachment').find({}).toArray((err, data) => {
+            data.forEach(item => attachMap[item.aid] = item);
+            resolve(attachMap);
+          });
+        });
       }
 
       function prepareForumType() {
@@ -212,6 +210,7 @@ function convertThreadAndPost(config, conns) {
             }
           })
           let promiseArray = new Array(dataset.length);
+          let bindAttachmentPromises = [];
           for (let i = 0; i != dataset.length; ++i) {
             promiseArray[i] = new Promise((resolve, reject) => {
               conns.mysql.query({
@@ -249,10 +248,25 @@ function convertThreadAndPost(config, conns) {
                     dataset[i].replies = dataset[i].posts.length;
                     dataset[i].posts.forEach((post, index) => {
                       post.index = index + 1;
-                      // post.attachments = [];
                       post.content = contentConverter(post, uidMap);
                       post.encoding = 'html';
-                      post.attachments = pidAttachMap[post.pid];
+                      post.attachments = pidAttachMap[post.pid] || [];
+
+                      // 双向绑定
+                      for (let j = 0; j < post.attachments.length; j++) {
+                        bindAttachmentPromises.push(conns.mongo.collection('attachment').updateOne(
+                          { _id: post.attachments[j] },
+                          {
+                            $push: {
+                              referer: {
+                                _discussionId: dataset[i]._id,
+                                index: post.index,
+                              }
+                            }
+                          }
+                        ));
+                      }
+
 
                       pidMap[post.pid] = {
                         memberId: post.user,
@@ -306,11 +320,14 @@ function convertThreadAndPost(config, conns) {
             });
           }
 
-          Promise.all(promiseArray).then(() => {
-            resolve(dataset);
-          }).catch(e => {
-            reject(e);
-          })
+          Promise.all(promiseArray)
+            .then(() => Promise.all(bindAttachmentPromises))
+            .then(() => {
+              resolve(dataset);
+            })
+            .catch(e => {
+              reject(e);
+            })
         })
       }
 
