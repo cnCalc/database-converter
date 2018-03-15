@@ -26,7 +26,7 @@ const { MongoClient } = require('mongodb');
     .replace(/\[\/url\]/ig,                 (match)     => `</a>`)
     .replace(/\<table\>([^]+?)\<\/table\>/ig, (match, p1) => `<table>${p1.split('<br>').join('')}</table>`)
  */
-function convertDiscussionContent(post, uidMap) {
+function convertDiscussionContent(post, uidMap, aidMap) {
   let content = post.content;
   let newSizeArray = [undefined, .63, .82, 1, 1.13, 1.5, 2, 3];
   let attachments = content.match(/\[attach\](\d+)\[\/attach\]/ig);
@@ -35,18 +35,12 @@ function convertDiscussionContent(post, uidMap) {
     attachments.forEach(aid => {
       let resolved = '<a class="attachment invalid-attachment">无效附件</a>';
       do {
-        if (!uidMap[post.uid]) {
-          break;
-        }
-        let attachment = uidMap[post.uid].attachments.filter(a => a.aid === aid);
-        if (attachment.length !== 1) {
-          break;
-        }
-        attachment = attachment[0];
+        let attachment = aidMap[aid];
         if (attachment && attachment.fileName && attachment.fileName.match(/\.(jpg|jpeg|png|bmp|gif)$/)) {
-          resolved = `<img src="/uploads/attachment/forum/${attachment.fileName}"/>`;
+          // TODO
+          resolved = `<img src="/api/v1/attachment/${attachment._id}"/>`;
         } else if (attachment && attachment.fileName) {
-          resolved = `<a class="attachment" href="#attach-${attachment._id}" target="_blank">[附件] ${attachment.originalName}</a>`;
+          resolved = `<a class="attachment" href="#attach-${attachment._id}">[附件] ${attachment.fileName}</a>`;
           // post.attachments.push(attachment._id);
         }  
       } while (0);

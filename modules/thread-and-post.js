@@ -248,7 +248,7 @@ function convertThreadAndPost(config, conns) {
                     dataset[i].replies = dataset[i].posts.length;
                     dataset[i].posts.forEach((post, index) => {
                       post.index = index + 1;
-                      post.content = contentConverter(post, uidMap);
+                      post.content = contentConverter(post, uidMap, aidMap);
                       post.encoding = 'html';
                       post.attachments = pidAttachMap[post.pid] || [];
 
