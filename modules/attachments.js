@@ -80,6 +80,7 @@ function convertAttachments(config, conns) {
               fileName: attachment.filename,
               filePath: attachment.attachment,
               size: attachment.filesize,
+              downloadCount: 0,
               referer: [],
             }
           );
