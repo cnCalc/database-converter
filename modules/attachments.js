@@ -48,7 +48,7 @@ function convertAttachments(config, conns) {
         return new Promise((resolve, reject) => {
           conns.mongo.collection('common_member').find({}).toArray((err, data) => {
             let userMap = {};
-            data.forEach(item => userMap[item.uid] = item._id);
+            data.forEach(item => userMap[item.uid] = item);
             resolve(userMap);
           })
         });
@@ -74,6 +74,7 @@ function convertAttachments(config, conns) {
           let r = await conns.mongo.collection('attachment').insertOne(
             {
               _id: ObjectId(),
+              _owner: uidMap[attachment.uid] ? uidMap[attachment.uid]._id : null,
               pid: attachment.pid,
               aid: attachment.aid,
               type: attachment.isimage ? 'image' : 'file',
