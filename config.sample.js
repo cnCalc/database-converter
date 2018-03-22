@@ -13,7 +13,7 @@ module.exports = {
     cleanup: true,          // Delete all data in MongoDB.
     skipFourZero: false,    // Skip all users with empty brith{day|month|year} and gender.
     skipArchiveTable: false,// Skip archived user.
-    assetPath: '/home/ntzyz/workspace/cncalc/serainTalk/'    
+    assetPath: '/home/ntzyz/workspace/cncalc/serainTalk/uploads/'    
   },
   threadAndPost: {
     convert: true,
