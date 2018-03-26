@@ -1,5 +1,20 @@
 'use strict';
 const { ObjectId } = require('mongodb');
+const mmm = require('mmmagic');
+const Magic = mmm.Magic;
+const magic = new Magic(mmm.MAGIC_MIME_TYPE);
+
+function getMIME (filepath) {
+  return new Promise((resolve, reject) => {
+    magic.detectFile(filepath, (err, res) => {
+      if (err) {
+        return reject(err);
+      } else {
+        return resolve(res);
+      }
+    })
+  });
+}
 
 function convertAttachments(config, conns) {
   if (!config.attachment.convert) {
@@ -70,7 +85,14 @@ function convertAttachments(config, conns) {
         //   }
         // });
         console.log('[Attachments][Mongo] Inserting data into MongoDB...');
-        for (let attachment of attachments) {
+
+        await Promise.all(attachments.map(async attachment => {
+          let mime;
+          try {
+            mime = await getMIME(require('path').join(config.attachment.assetPath, 'attachment/forum', attachment.attachment));
+          } catch (err) {
+            return;
+          }
           let r = await conns.mongo.collection('attachment').insertOne(
             {
               _id: ObjectId(),
@@ -78,7 +100,7 @@ function convertAttachments(config, conns) {
               pid: attachment.pid,
               aid: attachment.aid,
               date: attachment.dateline * 1000,
-              type: attachment.isimage ? 'image' : 'file',
+              mime,
               fileName: attachment.filename,
               filePath: attachment.attachment,
               size: attachment.filesize,
@@ -86,7 +108,7 @@ function convertAttachments(config, conns) {
               referer: [],
             }
           );
-        }
+        }))
 
         resolve();
       });
