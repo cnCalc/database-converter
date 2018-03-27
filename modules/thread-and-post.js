@@ -145,7 +145,7 @@ function convertThreadAndPost(config, conns) {
         console.log('[ThreadAndPost][MySQL] Fetching thread data.');
         return new Promise((resolve, reject) => {
           conns.mysql.query([
-            'SELECT authorid, subject, dateline, views, replies, tid, ',
+            'SELECT authorid, subject, dateline, views, replies, tid, closed, digest, ',
             '	      cbs_forum_forum.name as category',
             'FROM   cncalc.cbs_forum_thread',
             'left join cbs_forum_forum ',
@@ -185,6 +185,14 @@ function convertThreadAndPost(config, conns) {
           obj.category = categoriesMap[item.category] || item.category;
           obj.tid = item.tid;
           obj.status = { type: 'ok' };
+
+          if (item.closed === 1) {
+            obj.status = { type: 'locked' };
+          }
+
+          if (item.digest) {
+            obj.tags = ['cnCalc 精华'];
+          }
 
           transformed.push(obj);
         });
@@ -282,7 +290,7 @@ function convertThreadAndPost(config, conns) {
                       }
 
                       // @<Member ID>#<Discussion ID>#<Post Index>
-                      const replyPatten0 = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
+                      const replyPatten0 = /<blockquote>[^]+?forum.php\?mod=redirect\&goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote>(<br\/>){0,1}/i;
                       let replyMatchRes = post.content.match(replyPatten0);
                       if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
                         post.replyTo = pidMap[replyMatchRes[1]];
@@ -290,7 +298,7 @@ function convertThreadAndPost(config, conns) {
                         return;
                       }
 
-                      const replyPatten1 = /<blockquote>[^]+?redirect.php\?goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote><br\/>/i;
+                      const replyPatten1 = /<blockquote>[^]+?redirect.php\?goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/blockquote>(<br\/>){0,1}/i;
                       replyMatchRes = post.content.match(replyPatten1);
                       if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
                         post.replyTo = pidMap[replyMatchRes[1]];
@@ -299,7 +307,7 @@ function convertThreadAndPost(config, conns) {
                       }
 
                       // <blockquote>415987611 发表于 2013-7-31 13:12 但明显nspire配置好点，能省去不少麻烦</blockquote>
-                      const replyPatten2 = /<blockquote>[^]+? 发表于 \d+-\d+-\d+ \d+:\d+ ([^>]+?)<\/blockquote><br\/>/i;
+                      const replyPatten2 = /<blockquote>[^]+? 发表于 \d+-\d+-\d+ \d+:\d+ ([^>]+?)<\/blockquote>(<br\/>){0,1}/i;
                       replyMatchRes = post.content.match(replyPatten2);
                       if (!replyMatchRes) {
                         return;
