@@ -77,7 +77,7 @@ function convertAttachments(config, conns) {
               _owner: uidMap[attachment.uid] ? uidMap[attachment.uid]._id : null,
               pid: attachment.pid,
               aid: attachment.aid,
-              type: attachment.isimage ? 'image' : 'file',
+              type: 'attachment',
               fileName: attachment.filename,
               filePath: attachment.attachment,
               size: attachment.filesize,
