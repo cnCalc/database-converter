@@ -185,6 +185,10 @@ function convertThreadAndPost(config, conns) {
           obj.category = categoriesMap[item.category] || item.category;
           obj.tid = item.tid;
           obj.status = { type: 'ok' };
+          obj.sticky = {
+            site: null,
+            category: null,
+          };
 
           if (item.closed === 1) {
             obj.status = { type: 'locked' };
