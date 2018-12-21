@@ -196,10 +196,6 @@ function convertThreadAndPost(config, conns) {
             }
           })()
           obj.status = { type: 'ok' };
-          obj.sticky = {
-            site: null,
-            category: null,
-          };
 
           if (item.closed === 1) {
             obj.status = { type: 'locked' };
