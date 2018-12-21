@@ -145,7 +145,7 @@ function convertThreadAndPost(config, conns) {
         console.log('[ThreadAndPost][MySQL] Fetching thread data.');
         return new Promise((resolve, reject) => {
           conns.mysql.query([
-            'SELECT authorid, subject, dateline, views, replies, tid, closed, digest, ',
+            'SELECT authorid, subject, dateline, views, replies, tid, closed, digest, cbs_forum_thread.displayorder, ',
             '	      cbs_forum_forum.name as category',
             'FROM   cncalc.cbs_forum_thread',
             'left join cbs_forum_forum ',
@@ -184,6 +184,17 @@ function convertThreadAndPost(config, conns) {
           obj.tags = [];
           obj.category = categoriesMap[item.category] || item.category;
           obj.tid = item.tid;
+          obj.sticky = (() => {
+            switch (item.displayorder) {
+              case 1:
+              case 2:
+                return { category: 1, site: 0};
+              case 3:
+                return { category: 1, site: 1};
+              default:
+                return { category: 0, site: 0};
+            }
+          })()
           obj.status = { type: 'ok' };
 
           if (item.closed === 1) {
