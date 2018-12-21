@@ -75,7 +75,8 @@ function convertDiscussionContent(post, uidMap, aidMap) {
     .replace(/\[(table|\/table|td|tr|\/tr|\/td)\]/ig, (match, p1) => `<${p1}>`)
     .replace(/\[(table|tr|td|)\=([^]+?)\]/ig,   (match, p1, p2) => `<${p1} width=${p2}>`)
     .replace(/\[quote\]([^]+?)\[\/quote\]/ig,   (match, p1) => `<blockquote>${p1}</blockquote>`)
-    .replace(/<br\/>/g, "<br/>\n");
+    .replace(/<br\/>/g, "<br/>\n")
+    .replace(/href="(http:|https:|)\/\/www.cncalc.org\//ig, 'href="/');
 }
 
 module.exports = convertDiscussionContent;
