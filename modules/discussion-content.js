@@ -76,6 +76,7 @@ function convertDiscussionContent(post, uidMap, aidMap) {
     .replace(/\[(table|tr|td|)\=([^]+?)\]/ig,   (match, p1, p2) => `<${p1} width=${p2}>`)
     .replace(/\[quote\]([^]+?)\[\/quote\]/ig,   (match, p1) => `<blockquote>${p1}</blockquote>`)
     .replace(/<br\/>/g, "<br/>\n")
+    .replace(/\[hr\]/g, "<hr/>\n")
     .replace(/href="(http:|https:|)\/\/www.cncalc.org\//ig, 'href="/');
 }
 
