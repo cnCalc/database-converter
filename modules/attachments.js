@@ -45,9 +45,9 @@ function convertAttachments(config, conns) {
           conns.mysql.query({
             sql:
               `SELECT cbs_forum_attachment_${tail}.*, cbs_forum_attachment.downloads ` +
-              `FROM cncalc.cbs_forum_attachment_${tail} ` +
-              `INNER JOIN cncalc.cbs_forum_attachment ` +
-              `ON cncalc.cbs_forum_attachment.aid = cncalc.cbs_forum_attachment_${tail}.aid`
+              `FROM cbs_forum_attachment_${tail} ` +
+              `INNER JOIN cbs_forum_attachment ` +
+              `ON cbs_forum_attachment.aid = cbs_forum_attachment_${tail}.aid`
           }, (err, data) => {
             if (err) {
               reject(err);
