@@ -147,7 +147,7 @@ function convertThreadAndPost(config, conns) {
           conns.mysql.query([
             'SELECT authorid, subject, dateline, views, replies, tid, closed, digest, cbs_forum_thread.displayorder, ',
             '	      cbs_forum_forum.name as category',
-            'FROM   cncalc.cbs_forum_thread',
+            'FROM   cbs_forum_thread',
             'left join cbs_forum_forum ',
             '	  on cbs_forum_forum.fid = cbs_forum_thread.fid',
             'left join cbs_forum_threadclass ',
@@ -233,7 +233,7 @@ function convertThreadAndPost(config, conns) {
           for (let i = 0; i != dataset.length; ++i) {
             promiseArray[i] = new Promise((resolve, reject) => {
               conns.mysql.query({
-                sql: 'SELECT * FROM cncalc.cbs_forum_post WHERE tid = ? ORDER BY pid',
+                sql: 'SELECT * FROM cbs_forum_post WHERE tid = ? ORDER BY pid',
                 values: [dataset[i].tid],
               }, (err, data) => {
                 if (err) {
@@ -354,7 +354,7 @@ function convertThreadAndPost(config, conns) {
         console.log('[ThreadAndPost][undef] Fetching posts rates.')
         return new Promise((resolve, reject) => {
           conns.mysql.query({
-            sql: 'select * from cncalc.cbs_forum_ratelog;'
+            sql: 'select * from cbs_forum_ratelog;'
           }, (err, data) => {
             let rateMap = {};
             for (let record of data) {

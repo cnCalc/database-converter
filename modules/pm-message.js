@@ -31,8 +31,8 @@ function convertPmMessage(config, conns) {
             `     , cbs_ucenter_pm_members.uid AS receiver ` +
             `     , cbs_ucenter_pm_messages_${tail}.message ` +
             `     , cbs_ucenter_pm_messages_${tail}.dateline ` +
-            `FROM cncalc.cbs_ucenter_pm_messages_${tail} ` +
-            `INNER JOIN cncalc.cbs_ucenter_pm_members ` +
+            `FROM cbs_ucenter_pm_messages_${tail} ` +
+            `INNER JOIN cbs_ucenter_pm_members ` +
             `ON cbs_ucenter_pm_messages_${tail}.plid = cbs_ucenter_pm_members.plid`
           , (err, data) => {
             if (err) {
