@@ -36,7 +36,7 @@ function convertDiscussionContent(post, uidMap, aidMap) {
       let resolved = '<a class="attachment invalid-attachment">无效附件</a>';
       do {
         let attachment = aidMap[aid];
-        if (attachment && attachment.fileName && attachment.fileName.match(/\.(jpg|jpeg|png|bmp|gif)$/)) {
+        if (attachment && attachment.fileName && attachment.fileName.match(/\.(jpg|jpeg|png|bmp|gif)$/i)) {
           // TODO
           resolved = `<img src="/api/v1/attachment/${attachment._id}"/>`;
         } else if (attachment && attachment.fileName) {
@@ -77,7 +77,9 @@ function convertDiscussionContent(post, uidMap, aidMap) {
     .replace(/\[quote\]([^]+?)\[\/quote\]/ig,   (match, p1) => `<blockquote>${p1}</blockquote>`)
     .replace(/<br\/>/g, "<br/>\n")
     .replace(/\[hr\]/g, "<hr/>\n")
-    .replace(/href="(http:|https:|)\/\/www.cncalc.org\//ig, 'href="/');
+    .replace(/href="(http:|https:|)\/\/www.cncalc.org\//ig, 'href="/')
+    .replace(/href="([^\.]+?)\.php/ig,          (match, p1) => `href="/${p1}.php`)
+    .replace(/\[img\]([^]+?)\[\/img\]/ig,       (match, p1) => `<img src="${p1}">`);
 }
 
 module.exports = convertDiscussionContent;
