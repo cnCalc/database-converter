@@ -78,7 +78,7 @@ function convertDiscussionContent(post, uidMap, aidMap) {
     .replace(/<br\/>/g, "<br/>\n")
     .replace(/\[hr\]/g, "<hr/>\n")
     .replace(/href="(http:|https:|)\/\/www.cncalc.org\//ig, 'href="/')
-    .replace(/href="([^\.]+?)\.php/ig,          (match, p1) => `href="/${p1}.php`)
+    .replace(/href="([^\.\/]+?)\.php/ig,          (match, p1) => `href="/${p1}.php`)
     .replace(/\[img\]([^]+?)\[\/img\]/ig,       (match, p1) => `<img src="${p1}">`);
 }
 
