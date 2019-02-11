@@ -146,7 +146,7 @@ function convertThreadAndPost(config, conns) {
         return new Promise((resolve, reject) => {
           conns.mysql.query([
             'SELECT authorid, subject, dateline, views, replies, tid, closed, digest, cbs_forum_thread.displayorder, ',
-            '	      cbs_forum_forum.name as category',
+            '	      cbs_forum_forum.name as category, cbs_forum_threadclass.name as tag',
             'FROM   cbs_forum_thread',
             'left join cbs_forum_forum ',
             '	  on cbs_forum_forum.fid = cbs_forum_thread.fid',
@@ -188,11 +188,11 @@ function convertThreadAndPost(config, conns) {
             switch (item.displayorder) {
               case 1:
               case 2:
-                return { category: 1, site: 0};
+                return { category: 1, site: 0 };
               case 3:
-                return { category: 1, site: 1};
+                return { category: 1, site: 1 };
               default:
-                return { category: 0, site: 0};
+                return { category: 0, site: 0 };
             }
           })()
           obj.status = { type: 'ok' };
@@ -203,6 +203,10 @@ function convertThreadAndPost(config, conns) {
 
           if (item.digest) {
             obj.tags = ['cnCalc 精华'];
+          }
+
+          if (item.tag) {
+            obj.tags.push(item.tag);
           }
 
           transformed.push(obj);
