@@ -324,16 +324,24 @@ function convertThreadAndPost(config, conns) {
                       // <blockquote>415987611 发表于 2013-7-31 13:12 但明显nspire配置好点，能省去不少麻烦</blockquote>
                       const replyPatten2 = /<blockquote>[^]+? 发表于 \d+-\d+-\d+ \d+:\d+ ([^>]+?)<\/blockquote>(<br\/>){0,1}/i;
                       replyMatchRes = post.content.match(replyPatten2);
-                      if (!replyMatchRes) {
-                        return;
-                      }
-                      for (let idx = 0; idx < index; idx++) {
-                        let short = replyMatchRes[1].trim().replace(/\.+$/, '').trim();
-                        if (dataset[i].posts[idx].content.indexOf(short) >= 0) {
-                          post.replyTo = pidMap[dataset[i].posts[idx].pid];
-                          post.content = post.content.replace(replyPatten2, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
-                          break;
+                      if (replyMatchRes) {
+                        for (let idx = 0; idx < index; idx++) {
+                          let short = replyMatchRes[1].trim().replace(/\.+$/, '').trim();
+                          if (dataset[i].posts[idx].content.indexOf(short) >= 0) {
+                            post.replyTo = pidMap[dataset[i].posts[idx].pid];
+                            post.content = post.content.replace(replyPatten2, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
+                            break;
+                          }
                         }
+                      }
+
+                      // <b> <a href="/redirect.php?goto=findpost&amp;pid=104332&amp;ptid=7657">3#</a> <i>lch</i> </b>
+                      const replyPatten3 = /^<b>[^]+?redirect.php\?goto=findpost\&pid=(\d+)\&ptid=\d+[^]+?<\/b>(<br\/>){0,1}/i;
+                      replyMatchRes = post.content.match(replyPatten3);
+                      if (replyMatchRes && typeof pidMap[replyMatchRes[1]] !== 'undefined') {
+                        post.replyTo = pidMap[replyMatchRes[1]];
+                        post.content = post.content.replace(replyPatten3, `@${post.replyTo.memberId}#${dataset[i]._id}#${post.replyTo.value} `);
+                        return;
                       }
                     })
                   }
