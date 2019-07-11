@@ -162,6 +162,27 @@ function convertThreadAndPost(config, conns) {
         });
       }
 
+      function attachFavData (threadData, uidMap) {
+        return Promise.all(threadData.map(data => {
+          return new Promise(resolve => {
+            conns.mysql.query({
+              sql: 'SELECT * FROM cbs_home_favorite WHERE idtype = "tid" AND id = ?',
+              values: [data.tid]
+            }, (err, res) => {
+              data.subscribers = {};
+              
+              for (const row of res) {
+                if (uidMap[row.uid]) {
+                  data.subscribers[uidMap[row.uid]._id] = 'watch';
+                }
+              }
+
+              resolve();
+            })
+          })
+        }));
+      }
+
       function transformThreadData(threadData, uidMap) {
         console.log('[ThreadAndPost][undef] Reformating data.');
         let transformed = [];
@@ -418,6 +439,7 @@ function convertThreadAndPost(config, conns) {
         let dataset = transformThreadData(threadData, uidMap);
         dataset = await attachThreadPosts(dataset, uidMap, aidMap);
         dataset = await attachRates(dataset, uidMap, aidMap);
+        await attachFavData(dataset, uidMap);
         await insertMongo(dataset);
         resolve();
       } catch (e) {
