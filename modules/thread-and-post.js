@@ -191,9 +191,9 @@ function convertThreadAndPost(config, conns) {
         threadData.forEach(item => {
           let obj = {};
           if (uidMap[item.authorid]) {
-            obj.creater = uidMap[item.authorid]._id;
+            obj.creator = uidMap[item.authorid]._id;
           } else if (warned.indexOf(item.authorid) < 0) {
-            obj.creater = null;
+            obj.creator = null;
             console.log('[WARN] Unknown author id: ' + item.authorid + '. Maybe a deleted spammer?');
             warned.push(item.authorid)
           }

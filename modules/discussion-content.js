@@ -50,7 +50,7 @@ function convertDiscussionContent(post, uidMap, aidMap) {
   return content
     .replace(/\[\/(size|font)\]/ig,             (match)     => '</span>')
     .replace(/\[(\/backcolor|\/color|)\]/ig,    (match)     => '')
-    .replace(/\[\/align\]/ig,                   (match)     => '')
+    .replace(/\[\/align\]/ig,                   (match)     => '</div>')
     .replace(/\[(b|\/b|i|i\=.|\/i|u|\/u)\]/ig,  (match, p1) => `<${p1}>`)    
     .replace(/\[list\]/ig,                      (match)     => '<ul>')
     .replace(/\[list\=(.)\]/ig,                 (match, p1) => `<ul type="${p1}">`)
@@ -64,7 +64,7 @@ function convertDiscussionContent(post, uidMap, aidMap) {
     .replace(/\[size=(\d+?)\]/ig,               (match, p1) => Number(p1) > 3 ? '<span style="font-weight: bold;">' : (Number(p1) < 3 ? '<span style="font-size: 0.9em;">' :'<span>'))
     .replace(/\[size=(\d+(\.\d+)?(px|pt|in|cm|mm|pc|em|ex|%)+?)\]/ig, (match, p1) => `<span>`)
     .replace(/\[font=([^\[\<]+?)\]/ig,          (match, p1) => `<span>`)
-    .replace(/\[align=(left|center|right)\]/ig, (match, p1) => ``)
+    .replace(/\[align=(left|center|right)\]/ig, (match, p1) => `<div>`)
     .replace(/\[float=(left|right)\]/ig,        (match, p1) => ``)
     .replace(/(\n|\r\n)/ig,                     (match)     => '<br/>')
     .replace(/(\<br\/\>){1,}/ig,                (match)     => '<br/>')
@@ -79,7 +79,7 @@ function convertDiscussionContent(post, uidMap, aidMap) {
     .replace(/\[hr\]/g, "<hr/>\n")
     .replace(/href="(http:|https:|)\/\/www.cncalc.org\//ig, 'href="/')
     .replace(/href="([^\.\/]+?)\.php/ig,          (match, p1) => `href="/${p1}.php`)
-    .replace(/\[img\]([^]+?)\[\/img\]/ig,       (match, p1) => `<img src="${p1}">`);
+    .replace(/\[img[^\]]{0,}\]([^]+?)\[\/img\]/ig,       (match, p1) => `<img src="${p1}">`);
 }
 
 module.exports = convertDiscussionContent;
