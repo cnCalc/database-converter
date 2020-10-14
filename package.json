@@ -3,12 +3,12 @@
     "test": "mocha ./test/ --recursive"
   },
   "dependencies": {
-    "mmmagic": "^0.5.0",
-    "mongodb": "^2.2.25",
-    "mysql": "^2.13.0"
+    "mmmagic": "^0.5.3",
+    "mongodb": "^3.6.2",
+    "mysql": "^2.18.1"
   },
   "devDependencies": {
-    "chai": "^3.5.0",
-    "mocha": "^3.2.0"
+    "chai": "^4.2.0",
+    "mocha": "^8.1.3"
   }
 }

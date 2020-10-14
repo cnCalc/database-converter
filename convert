@@ -13,14 +13,14 @@ const convertPmMessage = require('./modules/pm-message');
 function createConnection(config) {
   return new Promise((resolve, reject) => {
     let mysqlConnecion = mysql.createConnection(config.mysql);
-    MongoClient.connect(config.mongo.url, (err, mongoConnection) => {
+    MongoClient.connect(config.mongo.url, { useNewUrlParser: true, useUnifiedTopology: true }, (err, server) => {
       if (err) {
         reject(err);
       }
 
       resolve({
         mysql: mysqlConnecion, 
-        mongo: mongoConnection
+        mongo: server.db(config.mongo.db)
       });
 
     });

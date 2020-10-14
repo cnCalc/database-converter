@@ -6,7 +6,8 @@ module.exports = {
     database: 'cncalc'
   },
   mongo: {
-    url: 'mongodb://localhost:27017/cncalc'
+    url: 'mongodb://localhost:27017/cncalc',
+    db: 'cncalc'
   },
   memberProfile: {
     convert: true,          // ..
